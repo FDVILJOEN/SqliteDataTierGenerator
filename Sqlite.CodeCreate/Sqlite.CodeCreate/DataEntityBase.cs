@@ -10,6 +10,11 @@ namespace Sqlite.CodeCreate
     public class DataEntityBase<T> where T : IEntityCreator<T>
     {
         /// <summary>
+        /// Key Field Collection.
+        /// </summary>
+        public static List<string> KeyFields = new();
+
+        /// <summary>
         /// Returns the first (or only) item from a table, based on the predicates supplied.
         /// </summary>
         /// <param name="predicates"></param>
@@ -50,6 +55,12 @@ namespace Sqlite.CodeCreate
             return default(T);
         }
 
+        /// <summary>
+        /// Returns a non-nullable parent property.
+        /// </summary>
+        /// <param name="predicates"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public static T ScalarStrict(params (string Key, object Val)[] predicates)
         {
             T? result = Scalar(predicates);
@@ -99,5 +110,59 @@ namespace Sqlite.CodeCreate
                 }
             }
         }
+
+        /// <summary>
+        /// Performs a Basic Insert Operation.
+        /// </summary>
+        /// <param name="values"></param>
+        protected void Insert(params (string Key, object? Val)[] values)
+        {
+            QueryParts parts = new QueryParts(KeyFields, values);           
+
+            if (Context.Connection is not null)
+            {
+                SqliteCommand cmd = Context.Connection.CreateCommand();
+                cmd.CommandText = "INSERT INTO [" + typeof(T).Name + "] (" + String.Join(',', parts.AllColumns.ToArray())  + ") VALUES (" + String.Join(',', parts.Values.ToArray()) + ")";
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>
+        /// Performs a Basic Update Operation.
+        /// </summary>
+        /// <param name="values"></param>
+        protected void Update(params (string Key, object? Val)[] values)
+        {
+            QueryParts parts = new QueryParts(KeyFields, values);
+
+            if (Context.Connection is not null)
+            {
+                SqliteCommand cmd = Context.Connection.CreateCommand();
+                cmd.CommandText = "Update [" + typeof(T).Name + "] SET " 
+                    + String.Join(',', parts.Statements.ToArray()) + " WHERE " 
+                    + string.Join(" AND ", parts.Predicates.ToArray());
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>
+        /// Upsert Operation.
+        /// </summary>
+        /// <param name="values"></param>
+        protected void Upsert(params (string Key, object? Val)[] values)
+        {
+            QueryParts parts = new QueryParts(KeyFields, values);
+
+            if (Context.Connection is not null)
+            {
+                SqliteCommand cmd = Context.Connection.CreateCommand();
+
+                cmd.CommandText = "INSERT INTO [" + typeof(T).Name + "] (" + String.Join(',', parts.AllColumns.ToArray()) + ") VALUES (" + String.Join(',', parts.Values.ToArray()) + ")";
+                cmd.CommandText += " ON CONFLICT(" + string.Join(',', parts.KeyColumns.ToArray()) + ") DO UPDATE SET " + String.Join(',', parts.Statements.ToArray());
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+
     }
 }

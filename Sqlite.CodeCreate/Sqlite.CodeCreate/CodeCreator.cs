@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using Sqlite.CodeCreate.Properties;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Sqlite.CodeCreate
@@ -67,9 +68,9 @@ namespace Sqlite.CodeCreate
             }
             ForeignKeyReader.Close();
 
-            Dictionary<String, TableDefinition> Tables = new();
 
             //Build the collection of Tables and Columns.
+            Dictionary<String, TableDefinition> Tables = new();
             SqliteCommand MetaDataCommand = _connection.CreateCommand();
             MetaDataCommand.CommandText = Resources.qry_MetaData;
             SqliteDataReader MetaDataReader = MetaDataCommand.ExecuteReader();
@@ -134,11 +135,39 @@ namespace Sqlite.CodeCreate
                 fileContent.AppendLine("{");
 
                 //Class
+                List<String> KeyFields = new List<string>();
+
+                foreach (var field in table.Columns)
+                {
+                    if (field.IsPrimaryKey)
+                    {
+                        KeyFields.Add("\"" + field.Name + "\"");
+                    }
+                }
+
                 fileContent.AppendLine("    public class " + className + ": DataEntityBase<" + className + ">, IEntityCreator<" + className + ">");
                 fileContent.AppendLine("    {");
 
-                //Collection to keep the assignemnt statements from reader to actual fields.
-                List<String> AssignmentStatements = new();
+                //Key Fields Collection.
+                fileContent.AppendLine("");
+                fileContent.AppendLine("        ///<summary>");
+                fileContent.AppendLine("        ///Definition of Key Fields");
+                fileContent.AppendLine("        ///</summary>");
+                fileContent.AppendLine("        static " + className + "() {");
+                fileContent.AppendLine("            KeyFields = new([" + String.Join(',', KeyFields.ToArray()) + "]);");
+                fileContent.AppendLine("        }");
+                fileContent.AppendLine("");
+
+
+                
+
+
+
+        //Collection to keep the assignemnt statements from reader to actual fields.
+        List<String> AssignmentStatements = new();
+
+                List<String> CrudNameValuePairs = new();
+
 
                 //Attributes - Corresponding to Field Names.
 
@@ -175,6 +204,10 @@ namespace Sqlite.CodeCreate
                     //Storing the assignment of this field value from the reader.
                     string methodName = columnDefinition.ReaderMethod;
                     AssignmentStatements.Add("            result." + columnDefinition.Name + " = reader." + methodName + "(" + index.ToString() + ");");
+
+                    //CRUD Name Value Pairs
+                    CrudNameValuePairs.Add("(\"" + columnDefinition.Name + "\", this." + columnDefinition.Name + ")");
+
                     index++;
                 }
 
@@ -270,6 +303,28 @@ namespace Sqlite.CodeCreate
                 fileContent.AppendLine("        }");
 
                 fileContent.AppendLine("");
+
+                //AddUpdate Method
+                fileContent.AppendLine("        public void AddUpdate()");
+                fileContent.AppendLine("        {");
+                fileContent.AppendLine("            Upsert(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
+                fileContent.AppendLine("        }");
+
+                fileContent.AppendLine("");
+
+                //AddUpdate Method
+                fileContent.AppendLine("        public void Insert()");
+                fileContent.AppendLine("        {");
+                fileContent.AppendLine("            Insert(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
+                fileContent.AppendLine("        }");
+
+                fileContent.AppendLine("");
+
+                //AddUpdate Method
+                fileContent.AppendLine("        public void Update()");
+                fileContent.AppendLine("        {");
+                fileContent.AppendLine("            Update(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
+                fileContent.AppendLine("        }");
 
 
                 //End of Class

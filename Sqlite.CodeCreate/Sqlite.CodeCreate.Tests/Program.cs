@@ -34,17 +34,28 @@ namespace Sqlite.CodeCreate.Tests
             cc.CreateCode();
 
             //Querying one of the items.
-            /*
-
+            
+            
             Context.Connection = conn;
             var allAlbums = Albums.Collection();
 
             foreach (var item in allAlbums)
             {
                 Console.WriteLine(item.Title + " by " + item.FK_Artists.Name);
+
+                if (item.Title[0] == '*')
+                {
+                    item.Title = item.Title.Substring(1);
+                }
+                else
+                {
+                    item.Title = '*' + item.Title;
+                }
+
+                item.Update();
+
+                item.AddUpdate();
             }
-            
-            */
         }
     }
 }
