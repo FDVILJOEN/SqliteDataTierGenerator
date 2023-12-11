@@ -163,6 +163,23 @@ namespace Sqlite.CodeCreate
             }
         }
 
+        /// <summary>
+        /// Deletion of Records from the database.
+        /// </summary>
+        /// <param name="values"></param>
+        protected void Delete(params (string Key, object? Val)[] values)
+        {
+            QueryParts parts = new QueryParts(KeyFields, values);
+
+            if (Context.Connection is not null)
+            {
+                SqliteCommand cmd = Context.Connection.CreateCommand();
+                cmd.CommandText = "DELETE FROM [" + typeof(T).Name + "] WHERE " + string.Join(" AND ", parts.Predicates.ToArray());
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+
 
     }
 }

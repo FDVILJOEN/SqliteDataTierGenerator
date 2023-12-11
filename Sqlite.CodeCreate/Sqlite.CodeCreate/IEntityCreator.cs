@@ -22,6 +22,11 @@ namespace Sqlite.CodeCreate
         //Update of Record to Database.
         void Update();
 
+        /// <summary>
+        /// Deletion of Individual Records.
+        /// </summary>
+        void Delete();
+
         static abstract T Instance(SqliteDataReader reader);
         
     }

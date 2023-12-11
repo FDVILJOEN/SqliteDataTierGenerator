@@ -326,6 +326,14 @@ namespace Sqlite.CodeCreate
                 fileContent.AppendLine("            Update(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
                 fileContent.AppendLine("        }");
 
+                fileContent.AppendLine("");
+
+                //AddUpdate Method
+                fileContent.AppendLine("        public void Delete()");
+                fileContent.AppendLine("        {");
+                fileContent.AppendLine("            Delete(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
+                fileContent.AppendLine("        }");
+
 
                 //End of Class
                 fileContent.AppendLine("    }");

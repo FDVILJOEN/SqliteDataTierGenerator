@@ -34,8 +34,8 @@ namespace Sqlite.CodeCreate.Tests
             cc.CreateCode();
 
             //Querying one of the items.
-            
-            
+            /*            
+                        
             Context.Connection = conn;
             var allAlbums = Albums.Collection();
 
@@ -56,6 +56,9 @@ namespace Sqlite.CodeCreate.Tests
 
                 item.AddUpdate();
             }
+
+            */
+            
         }
     }
 }
