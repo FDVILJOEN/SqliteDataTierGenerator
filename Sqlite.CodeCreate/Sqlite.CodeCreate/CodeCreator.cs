@@ -86,13 +86,34 @@ namespace Sqlite.CodeCreate
                 if (!Tables.ContainsKey(TableName))
                     Tables.Add(TableName, new TableDefinition() { TableName = TableName});
 
+                bool fieldNullable = (MetaDataReader.GetInt32(6) == 0);
+                string fieldName = char.ToUpper(MetaDataReader.GetString(2)[0]) + MetaDataReader.GetString(2).Substring(1);
+
                 Tables[TableName].Columns.Add(new ColumnDefinition()
                 {
-                    Name = char.ToUpper(MetaDataReader.GetString(2)[0]) + MetaDataReader.GetString(2).Substring(1),
+                    Name = fieldName,
                     IsPrimaryKey = MetaDataReader.GetInt32(4) != 0,
-                    Nullable = (MetaDataReader.GetInt32(6) == 0),
+                    Nullable = fieldNullable,
                     DataBaseType = MetaDataReader.GetString(3),
                 });
+
+                //Set nullability of the FK on the column if it exists.
+                if (fieldNullable)
+                {
+                    foreach (ForeignKey fk in AllForeignKeys.Values)
+                    {
+                        if (fk.SourceTable == TableName)
+                        {
+                            foreach (var pred in fk.Predicates)
+                            {
+                                if (pred.SourceCol.ToLower() == fieldName.ToLower())
+                                {
+                                    fk.IsNullable = true;
+                                }
+                            }
+                        }
+                    }
+                }
 
             }
             MetaDataReader.Close();
@@ -176,11 +197,29 @@ namespace Sqlite.CodeCreate
                         fileContent.AppendLine("        ///<summary>");
                         fileContent.AppendLine("        ///Returns the parent " + FKTable);
                         fileContent.AppendLine("        ///</summary>");
-                        fileContent.AppendLine("        public " + FKTable + "? FK_" + FKTable);
+
+                        if (FKEntry.IsNullable)
+                        {
+                            fileContent.AppendLine("        public " + FKTable + "? FK_" + FKTable);
+                        }
+                        else
+                        {
+                            fileContent.AppendLine("        public " + FKTable + " FK_" + FKTable);
+                        }
+
                         fileContent.AppendLine("        {");
                         fileContent.AppendLine("            get");
                         fileContent.AppendLine("            {");
-                        fileContent.AppendLine("                return " + FKTable + ".Scalar(" + string.Join(',', parameters) + ");");
+
+                        if (FKEntry.IsNullable)
+                        {
+                            fileContent.AppendLine("                return " + FKTable + ".Scalar(" + string.Join(',', parameters) + ");");
+                        }
+                        else
+                        {
+                            fileContent.AppendLine("                return " + FKTable + ".ScalarStrict(" + string.Join(',', parameters) + ");");
+                        }
+
                         fileContent.AppendLine("            }");
                         fileContent.AppendLine("        }");
                         fileContent.AppendLine("");

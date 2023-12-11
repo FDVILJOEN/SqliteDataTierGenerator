@@ -50,6 +50,16 @@ namespace Sqlite.CodeCreate
             return default(T);
         }
 
+        public static T ScalarStrict(params (string Key, object Val)[] predicates)
+        {
+            T? result = Scalar(predicates);
+            if (result != null)
+            {
+                return result;
+            }
+            throw new Exception("Foreign Key defined as non-nullable, but no parent found.");
+        }
+
         /// <summary>
         /// Returns a collection of items from a table, based on the predicates supplied.
         /// </summary>

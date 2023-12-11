@@ -35,6 +35,7 @@ namespace Sqlite.CodeCreate.Tests
 
             //Querying one of the items.
             /*
+
             Context.Connection = conn;
             var allAlbums = Albums.Collection();
 
@@ -42,6 +43,7 @@ namespace Sqlite.CodeCreate.Tests
             {
                 Console.WriteLine(item.Title + " by " + item.FK_Artists.Name);
             }
+            
             */
         }
     }

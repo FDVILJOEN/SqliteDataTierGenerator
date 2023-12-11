@@ -10,6 +10,8 @@ namespace Sqlite.CodeCreate
     {
         public required string SourceTable { get; set; }
         public required string TargetTable { get; set; }
+
+        public bool IsNullable { get; set; } = false;
         public List<(string SourceCol, string TartgetCol)> Predicates { get; set; } = new();
     }
 }
