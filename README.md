@@ -7,7 +7,7 @@ Here is a sample schema:
 
 And for the Customers Table, the code created looks as follows:
 
-@ -0,0 +1,174 @@
+~~~c#
 using Sqlite.CodeCreate;
 using Microsoft.Data.Sqlite;
 
@@ -182,3 +182,4 @@ namespace Sqlite.CodeCreate
         }
     }
 }
+~~~
