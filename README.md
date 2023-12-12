@@ -6,6 +6,10 @@ Given a Sqlite Database, this generates a set of c# classes which performs basic
 * Foreign Key Properties are defined on parent and child classes.
 * Instances can be synchronised with the database using the Insert, Update, Delete and AddUpdate methods.
 
+** How to use **
+
+1. Import the nuget package into your project using the command: dotnet add package Sqlite.CodeCreate --version 1.0.0
+
 Here is a sample schema:
 
 ![Database Schema](/img/chinook-schema.svg?raw=true "Example Sqlite Schema")
