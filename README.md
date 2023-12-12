@@ -9,7 +9,7 @@ Given a Sqlite Database, this generates a set of c# classes which performs basic
 **How to use:**
 
 1. Import the nuget package into your project using the command: dotnet add package Sqlite.CodeCreate
-2. In a code create harness project, create a valid Sqlite connection to your database:
+2. In a seperate project, create a valid Sqlite connection to your database:
 
 ~~~c#
 SqliteConnectionStringBuilder sb = new SqliteConnectionStringBuilder();
@@ -18,6 +18,15 @@ SqliteConnection conn = new SqliteConnection(sb.ToString());
 conn.Open();
 ~~~
 
+3.  Call the CreateCode method on CodeCreator.  This will create all the code into the destination path specified.
+
+~~~c#
+CodeCreator cc = new CodeCreator(conn);
+cc.OutputPath = outputPath;
+cc.CreateCode();
+~~~
+
+**Example:**
 Here is a sample schema:
 
 ![Database Schema](/img/chinook-schema.svg?raw=true "Example Sqlite Schema")
