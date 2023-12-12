@@ -31,20 +31,32 @@ namespace Sqlite.CodeCreate
         /// <summary>
         /// Main Creation Logic.
         /// </summary>
-        public void CreateCode()
+        public string[] CreateCode()
         {
-            if (this._connection.State != System.Data.ConnectionState.Open)
-            {
-                throw new InvalidOperationException("Database connection needs to be open.");
-            }
+            List<String> resultLog = new List<String>();
 
-            CreateTables();
+            try
+            {
+
+                resultLog.Add("CreateCode Started");
+                if (this._connection.State != System.Data.ConnectionState.Open)
+                {
+                    throw new InvalidOperationException("Database connection needs to be open.");
+                }
+
+                CreateTables(resultLog);
+            }
+            catch (Exception EX)
+            {
+                resultLog.Add(EX.Message);
+            }
+            return resultLog.ToArray();
         }
 
         /// <summary>
         /// Main logic for crerating individual tables.
         /// </summary>
-        private void CreateTables()
+        private void CreateTables(List<String> LogData)
         {
             //Retrieve all the foreign Key Rows out.
             //Foreign Key Attributes.

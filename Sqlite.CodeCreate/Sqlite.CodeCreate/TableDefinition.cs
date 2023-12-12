@@ -45,6 +45,18 @@ namespace Sqlite.CodeCreate
                     }
                 }
 
+                if (DataBaseType.ToUpper().Contains("TEXT"))
+                {
+                    if (Nullable)
+                    {
+                        return "string?";
+                    }
+                    else
+                    {
+                        return "string";
+                    }
+                }
+
                 if (DataBaseType.ToUpper().Contains("NUMERIC"))
                 {
                     return "double";
@@ -66,6 +78,7 @@ namespace Sqlite.CodeCreate
             get
             {
                 if (DataBaseType.ToUpper().Contains("NVARCHAR")) return "GetString";
+                if (DataBaseType.ToUpper().Contains("TEXT")) return "GetString";
                 if (DataBaseType.ToUpper() == "INTEGER") return "GetInt64";
                 if (DataBaseType.ToUpper().Contains("NUMERIC")) return "GetDouble";
                 if (DataBaseType.ToUpper() == "DATETIME") return "GetDateTime";
@@ -82,6 +95,7 @@ namespace Sqlite.CodeCreate
             get
             {
                 if (DataBaseType.ToUpper().Contains("NVARCHAR")) return " = String.Empty;";
+                if (DataBaseType.ToUpper().Contains("TEXT")) return " = String.Empty;";
                 return string.Empty;
             }
         }
