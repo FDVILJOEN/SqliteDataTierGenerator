@@ -1,6 +1,11 @@
 # SqliteDataTierGenerator
 Given a Sqlite Database, this generates a set of c# classes which performs basic CRUD operations. 
 
+**Capabilities:**
+* For every table, a corresponding class is created with Attributes defined for every field.
+* Foreign Key Properties are defined on parent and child classes.
+* Instances can be synchronised with the database using the Insert, Update, Delete and AddUpdate methods.
+
 Here is a sample schema:
 
 ![Database Schema](/img/chinook-schema.svg?raw=true "Example Sqlite Schema")
