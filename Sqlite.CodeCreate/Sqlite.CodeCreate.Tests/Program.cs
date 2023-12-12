@@ -31,7 +31,10 @@ namespace Sqlite.CodeCreate.Tests
             //Run Routine.
             CodeCreator cc = new CodeCreator(conn);
             cc.OutputPath = outputPath;
-            cc.CreateCode();
+            foreach (String S in cc.CreateCode())
+            {
+                Console.WriteLine(S);
+            }
 
             //Querying one of the items.
             /*            
@@ -58,7 +61,7 @@ namespace Sqlite.CodeCreate.Tests
             }
 
             */
-            
+
         }
     }
 }

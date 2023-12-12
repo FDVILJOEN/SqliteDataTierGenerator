@@ -80,6 +80,8 @@ namespace Sqlite.CodeCreate
             }
             ForeignKeyReader.Close();
 
+            LogData.Add("Discovered " + AllForeignKeys.Count.ToString() + " Foreign Keys.");
+
 
             //Build the collection of Tables and Columns.
             Dictionary<String, TableDefinition> Tables = new();
@@ -131,230 +133,237 @@ namespace Sqlite.CodeCreate
             }
             MetaDataReader.Close();
 
+            LogData.Add("Discovered " + Tables.Count.ToString() + " Tables Keys.");
+
             foreach (TableDefinition table in Tables.Values)
             {
                 string className = table.TableName;
-                StringBuilder fileContent = new StringBuilder();
 
-                //Using Clauses
-                fileContent.AppendLine("using Sqlite.CodeCreate;");
-                fileContent.AppendLine("using Microsoft.Data.Sqlite;");
+                LogData.Add("Creating Class " + className);
 
-                fileContent.AppendLine(string.Empty);
-
-                //Namespace
-                fileContent.AppendLine("namespace Sqlite.CodeCreate");
-                fileContent.AppendLine("{");
-
-                //Class
-                List<String> KeyFields = new List<string>();
-
-                foreach (var field in table.Columns)
+                try
                 {
-                    if (field.IsPrimaryKey)
+
+                    StringBuilder fileContent = new StringBuilder();
+
+                    //Using Clauses
+                    fileContent.AppendLine("using Sqlite.CodeCreate;");
+                    fileContent.AppendLine("using Microsoft.Data.Sqlite;");
+
+                    fileContent.AppendLine(string.Empty);
+
+                    //Namespace
+                    fileContent.AppendLine("namespace Sqlite.CodeCreate");
+                    fileContent.AppendLine("{");
+
+                    //Class
+                    List<String> KeyFields = new List<string>();
+
+                    foreach (var field in table.Columns)
                     {
-                        KeyFields.Add("\"" + field.Name + "\"");
+                        if (field.IsPrimaryKey)
+                        {
+                            KeyFields.Add("\"" + field.Name + "\"");
+                        }
                     }
-                }
 
-                fileContent.AppendLine("    public class " + className + ": DataEntityBase<" + className + ">, IEntityCreator<" + className + ">");
-                fileContent.AppendLine("    {");
+                    fileContent.AppendLine("    public class " + className + ": DataEntityBase<" + className + ">, IEntityCreator<" + className + ">");
+                    fileContent.AppendLine("    {");
 
-                //Key Fields Collection.
-                fileContent.AppendLine("");
-                fileContent.AppendLine("        ///<summary>");
-                fileContent.AppendLine("        ///Definition of Key Fields");
-                fileContent.AppendLine("        ///</summary>");
-                fileContent.AppendLine("        static " + className + "() {");
-                fileContent.AppendLine("            KeyFields = new([" + String.Join(',', KeyFields.ToArray()) + "]);");
-                fileContent.AppendLine("        }");
-                fileContent.AppendLine("");
-
-
-                
-
-
-
-        //Collection to keep the assignemnt statements from reader to actual fields.
-        List<String> AssignmentStatements = new();
-
-                List<String> CrudNameValuePairs = new();
-
-
-                //Attributes - Corresponding to Field Names.
-
-                int index = 0;
-                foreach (ColumnDefinition columnDefinition in table.Columns)
-                {
+                    //Key Fields Collection.
+                    fileContent.AppendLine("");
+                    fileContent.AppendLine("        ///<summary>");
+                    fileContent.AppendLine("        ///Definition of Key Fields");
+                    fileContent.AppendLine("        ///</summary>");
+                    fileContent.AppendLine("        static " + className + "() {");
+                    fileContent.AppendLine("            KeyFields = new([" + String.Join(',', KeyFields.ToArray()) + "]);");
+                    fileContent.AppendLine("        }");
                     fileContent.AppendLine("");
 
-                    //Comments for Attribute.
-                    fileContent.AppendLine("        ///<summary>");
-                    fileContent.AppendLine("        ///Gets / Sets the value for " + columnDefinition.Name);
+                    //Collection to keep the assignemnt statements from reader to actual fields.
+                    List<String> AssignmentStatements = new();
 
-                    if (columnDefinition.IsPrimaryKey)
+                    List<String> CrudNameValuePairs = new();
+
+                    //Attributes - Corresponding to Field Names.
+
+                    int index = 0;
+                    foreach (ColumnDefinition columnDefinition in table.Columns)
                     {
-                        fileContent.AppendLine("        ///This column forms part of the Primary Key");
-                    }
-                    if (columnDefinition.Nullable)
-                    {
-                        fileContent.AppendLine("        ///This columns is Nullable");
-                    }
-                    else
-                    {
-                        fileContent.AppendLine("        ///This columns is not Nullable");
-                    }
+                        fileContent.AppendLine("");
 
-                    fileContent.AppendLine("        ///The underlying data type is " + columnDefinition.DataBaseType);
-
-                    fileContent.AppendLine("        ///<summary>");
-
-                    //Adding the property on the Instance for each field.
-                    string DataType = columnDefinition.ClassDataType;
-                    fileContent.AppendLine("        public " + DataType + " " + columnDefinition.Name + " { get; set; }" + columnDefinition.DeclarationPostFix);
-
-                    //Storing the assignment of this field value from the reader.
-                    string methodName = columnDefinition.ReaderMethod;
-                    AssignmentStatements.Add("            result." + columnDefinition.Name + " = reader." + methodName + "(" + index.ToString() + ");");
-
-                    //CRUD Name Value Pairs
-                    CrudNameValuePairs.Add("(\"" + columnDefinition.Name + "\", this." + columnDefinition.Name + ")");
-
-                    index++;
-                }
-
-                fileContent.AppendLine("");
-
-                foreach (ForeignKey FKEntry in AllForeignKeys.Values)
-                {
-                    if (FKEntry.SourceTable.ToLower() == className.ToLower())
-                    {
-                        string FKTable = FKEntry.TargetTable;
-                        FKTable = char.ToUpper(FKTable[0]) + FKTable.Substring(1);
-
-                        List<string> parameters = new List<string>();
-
-                        foreach (var pred in FKEntry.Predicates)
-                        {
-                            parameters.Add("(\"" + pred.TartgetCol + "\",this." + pred.SourceCol + ")");
-                        }
-
+                        //Comments for Attribute.
                         fileContent.AppendLine("        ///<summary>");
-                        fileContent.AppendLine("        ///Returns the parent " + FKTable);
-                        fileContent.AppendLine("        ///</summary>");
+                        fileContent.AppendLine("        ///Gets / Sets the value for " + columnDefinition.Name);
 
-                        if (FKEntry.IsNullable)
+                        if (columnDefinition.IsPrimaryKey)
                         {
-                            fileContent.AppendLine("        public " + FKTable + "? FK_" + FKTable);
+                            fileContent.AppendLine("        ///This column forms part of the Primary Key");
+                        }
+                        if (columnDefinition.Nullable)
+                        {
+                            fileContent.AppendLine("        ///This columns is Nullable");
                         }
                         else
                         {
-                            fileContent.AppendLine("        public " + FKTable + " FK_" + FKTable);
+                            fileContent.AppendLine("        ///This columns is not Nullable");
                         }
 
-                        fileContent.AppendLine("        {");
-                        fileContent.AppendLine("            get");
-                        fileContent.AppendLine("            {");
-
-                        if (FKEntry.IsNullable)
-                        {
-                            fileContent.AppendLine("                return " + FKTable + ".Scalar(" + string.Join(',', parameters) + ");");
-                        }
-                        else
-                        {
-                            fileContent.AppendLine("                return " + FKTable + ".ScalarStrict(" + string.Join(',', parameters) + ");");
-                        }
-
-                        fileContent.AppendLine("            }");
-                        fileContent.AppendLine("        }");
-                        fileContent.AppendLine("");
-                    }
-
-                    if (FKEntry.TargetTable.ToLower() == className.ToLower())
-                    {
-                        string FKTable = FKEntry.SourceTable;
-                        FKTable = char.ToUpper(FKTable[0]) + FKTable.Substring(1);
-
-                        List<string> parameters = new List<string>();
-
-                        foreach (var pred in FKEntry.Predicates)
-                        {
-                            parameters.Add("(\"" + pred.SourceCol + "\",this." + pred.TartgetCol + ")");
-                        }
-
+                        fileContent.AppendLine("        ///The underlying data type is " + columnDefinition.DataBaseType);
 
                         fileContent.AppendLine("        ///<summary>");
-                        fileContent.AppendLine("        ///Returns the Collection of child " + FKTable + " records.");
-                        fileContent.AppendLine("        ///</summary>");
-                        fileContent.AppendLine("        public IEnumerable<" + FKTable + "> FK_" + FKTable);
-                        fileContent.AppendLine("        {");
-                        fileContent.AppendLine("            get");
-                        fileContent.AppendLine("            {");
-                        fileContent.AppendLine("                return " + FKTable + ".Collection(" + string.Join(',', parameters) + ");");
-                        fileContent.AppendLine("            }");
-                        fileContent.AppendLine("        }");
-                        fileContent.AppendLine("");
+
+                        //Adding the property on the Instance for each field.
+                        string DataType = columnDefinition.ClassDataType;
+                        fileContent.AppendLine("        public " + DataType + " " + columnDefinition.Name + " { get; set; }" + columnDefinition.DeclarationPostFix);
+
+                        //Storing the assignment of this field value from the reader.
+                        string methodName = columnDefinition.ReaderMethod;
+                        AssignmentStatements.Add("            result." + columnDefinition.Name + " = reader." + methodName + "(" + index.ToString() + ");");
+
+                        //CRUD Name Value Pairs
+                        CrudNameValuePairs.Add("(\"" + columnDefinition.Name + "\", this." + columnDefinition.Name + ")");
+
+                        index++;
                     }
+
+                    fileContent.AppendLine("");
+
+                    foreach (ForeignKey FKEntry in AllForeignKeys.Values)
+                    {
+                        if (FKEntry.SourceTable.ToLower() == className.ToLower())
+                        {
+                            string FKTable = FKEntry.TargetTable;
+                            FKTable = char.ToUpper(FKTable[0]) + FKTable.Substring(1);
+
+                            List<string> parameters = new List<string>();
+
+                            foreach (var pred in FKEntry.Predicates)
+                            {
+                                parameters.Add("(\"" + pred.TartgetCol + "\",this." + pred.SourceCol + ")");
+                            }
+
+                            fileContent.AppendLine("        ///<summary>");
+                            fileContent.AppendLine("        ///Returns the parent " + FKTable);
+                            fileContent.AppendLine("        ///</summary>");
+
+                            if (FKEntry.IsNullable)
+                            {
+                                fileContent.AppendLine("        public " + FKTable + "? FK_" + FKTable);
+                            }
+                            else
+                            {
+                                fileContent.AppendLine("        public " + FKTable + " FK_" + FKTable);
+                            }
+
+                            fileContent.AppendLine("        {");
+                            fileContent.AppendLine("            get");
+                            fileContent.AppendLine("            {");
+
+                            if (FKEntry.IsNullable)
+                            {
+                                fileContent.AppendLine("                return " + FKTable + ".Scalar(" + string.Join(',', parameters) + ");");
+                            }
+                            else
+                            {
+                                fileContent.AppendLine("                return " + FKTable + ".ScalarStrict(" + string.Join(',', parameters) + ");");
+                            }
+
+                            fileContent.AppendLine("            }");
+                            fileContent.AppendLine("        }");
+                            fileContent.AppendLine("");
+                        }
+
+                        if (FKEntry.TargetTable.ToLower() == className.ToLower())
+                        {
+                            string FKTable = FKEntry.SourceTable;
+                            FKTable = char.ToUpper(FKTable[0]) + FKTable.Substring(1);
+
+                            List<string> parameters = new List<string>();
+
+                            foreach (var pred in FKEntry.Predicates)
+                            {
+                                parameters.Add("(\"" + pred.SourceCol + "\",this." + pred.TartgetCol + ")");
+                            }
+
+
+                            fileContent.AppendLine("        ///<summary>");
+                            fileContent.AppendLine("        ///Returns the Collection of child " + FKTable + " records.");
+                            fileContent.AppendLine("        ///</summary>");
+                            fileContent.AppendLine("        public IEnumerable<" + FKTable + "> FK_" + FKTable);
+                            fileContent.AppendLine("        {");
+                            fileContent.AppendLine("            get");
+                            fileContent.AppendLine("            {");
+                            fileContent.AppendLine("                return " + FKTable + ".Collection(" + string.Join(',', parameters) + ");");
+                            fileContent.AppendLine("            }");
+                            fileContent.AppendLine("        }");
+                            fileContent.AppendLine("");
+                        }
+                    }
+
+                    fileContent.AppendLine("");
+
+                    fileContent.AppendLine("        ///<summary>");
+                    fileContent.AppendLine("        ///Creates an instance of the " + className + " type from a database record.");
+                    fileContent.AppendLine("        ///</summary>");
+                    fileContent.AppendLine("        public static " + className + " Instance(SqliteDataReader reader)");
+                    fileContent.AppendLine("        {");
+                    fileContent.AppendLine("            " + className + " result = new();");
+
+                    foreach (string assignment in AssignmentStatements)
+                    {
+                        fileContent.AppendLine(assignment);
+                    }
+
+                    fileContent.AppendLine("            return result;");
+                    fileContent.AppendLine("        }");
+
+                    fileContent.AppendLine("");
+
+                    //AddUpdate Method
+                    fileContent.AppendLine("        public void AddUpdate()");
+                    fileContent.AppendLine("        {");
+                    fileContent.AppendLine("            Upsert(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
+                    fileContent.AppendLine("        }");
+
+                    fileContent.AppendLine("");
+
+                    //AddUpdate Method
+                    fileContent.AppendLine("        public void Insert()");
+                    fileContent.AppendLine("        {");
+                    fileContent.AppendLine("            Insert(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
+                    fileContent.AppendLine("        }");
+
+                    fileContent.AppendLine("");
+
+                    //AddUpdate Method
+                    fileContent.AppendLine("        public void Update()");
+                    fileContent.AppendLine("        {");
+                    fileContent.AppendLine("            Update(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
+                    fileContent.AppendLine("        }");
+
+                    fileContent.AppendLine("");
+
+                    //AddUpdate Method
+                    fileContent.AppendLine("        public void Delete()");
+                    fileContent.AppendLine("        {");
+                    fileContent.AppendLine("            Delete(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
+                    fileContent.AppendLine("        }");
+
+
+                    //End of Class
+                    fileContent.AppendLine("    }");
+
+                    //End of Namespace
+                    fileContent.AppendLine("}");
+
+                    string outputFileName = Path.Combine(OutputPath, className + ".cs");
+                    File.WriteAllText(outputFileName, fileContent.ToString());
                 }
-
-                fileContent.AppendLine("");
-
-                fileContent.AppendLine("        ///<summary>");
-                fileContent.AppendLine("        ///Creates an instance of the " + className + " type from a database record.");
-                fileContent.AppendLine("        ///</summary>");
-                fileContent.AppendLine("        public static " + className + " Instance(SqliteDataReader reader)");
-                fileContent.AppendLine("        {");
-                fileContent.AppendLine("            " + className + " result = new();");
-                
-                foreach (string assignment in  AssignmentStatements)
+                catch (Exception ex)
                 {
-                    fileContent.AppendLine(assignment);
+                    LogData.Add("ERROR -  " + ex.Message);
                 }
-
-                fileContent.AppendLine("            return result;");
-                fileContent.AppendLine("        }");
-
-                fileContent.AppendLine("");
-
-                //AddUpdate Method
-                fileContent.AppendLine("        public void AddUpdate()");
-                fileContent.AppendLine("        {");
-                fileContent.AppendLine("            Upsert(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
-                fileContent.AppendLine("        }");
-
-                fileContent.AppendLine("");
-
-                //AddUpdate Method
-                fileContent.AppendLine("        public void Insert()");
-                fileContent.AppendLine("        {");
-                fileContent.AppendLine("            Insert(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
-                fileContent.AppendLine("        }");
-
-                fileContent.AppendLine("");
-
-                //AddUpdate Method
-                fileContent.AppendLine("        public void Update()");
-                fileContent.AppendLine("        {");
-                fileContent.AppendLine("            Update(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
-                fileContent.AppendLine("        }");
-
-                fileContent.AppendLine("");
-
-                //AddUpdate Method
-                fileContent.AppendLine("        public void Delete()");
-                fileContent.AppendLine("        {");
-                fileContent.AppendLine("            Delete(" + string.Join(',', CrudNameValuePairs.ToArray()) + ");");
-                fileContent.AppendLine("        }");
-
-
-                //End of Class
-                fileContent.AppendLine("    }");
-
-                //End of Namespace
-                fileContent.AppendLine("}");
-
-                string outputFileName = Path.Combine(OutputPath, className + ".cs");
-                File.WriteAllText(outputFileName, fileContent.ToString());
             }
         }
     }
