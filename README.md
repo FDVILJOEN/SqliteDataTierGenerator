@@ -8,7 +8,15 @@ Given a Sqlite Database, this generates a set of c# classes which performs basic
 
 **How to use:**
 
-1. Import the nuget package into your project using the command: dotnet add package Sqlite.CodeCreate --version 1.0.0
+1. Import the nuget package into your project using the command: dotnet add package Sqlite.CodeCreate
+2. In a code create harness project, create a valid Sqlite connection to your database:
+
+~~~c#
+SqliteConnectionStringBuilder sb = new SqliteConnectionStringBuilder();
+sb.DataSource = filename;
+SqliteConnection conn = new SqliteConnection(sb.ToString());
+conn.Open();
+~~~
 
 Here is a sample schema:
 
